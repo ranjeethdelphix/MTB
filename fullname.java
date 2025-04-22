@@ -11,6 +11,10 @@ import java.util.Collection;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import javax.annotation.Nullable;
+import java.util.Properties;
+import java.io.StringReader;
+import java.io.IOException;
+
 
 public class fullname implements MaskingAlgorithm<String> {
 
@@ -29,6 +33,15 @@ public class fullname implements MaskingAlgorithm<String> {
     public AlgorithmInstanceReference Company_name_algorithm;
     private MaskingAlgorithm<String> Cmp_algo_instance;
 
+    @JsonProperty("Company_Indicator")
+    @JsonPropertyDescription("The prefix indicator. Regular expression format")
+    public String Company_Indicator;
+    private String unescaped_indicator;
+
+    @JsonProperty("Short_Name_Length")
+    @JsonPropertyDescription("Length of Short Name field")
+    public int Short_Length;
+
     public boolean getAllowFurtherInstances() {
         return true;
     }
@@ -44,6 +57,30 @@ public class fullname implements MaskingAlgorithm<String> {
         } catch (Exception var3) {
             throw new RuntimeException(var3);
         }
+
+        try {
+            validateCompanyIndicator(this.Company_Indicator);
+
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: " + e.getMessage());
+            return;
+        }
+
+        try {
+            Properties properties = new Properties();
+            properties.load(new StringReader("key=" + this.Company_Indicator));
+            this.unescaped_indicator = properties.getProperty("key");
+        } catch (IOException e2) {
+            e2.printStackTrace();
+            this.unescaped_indicator = this.Company_Indicator;
+            return;
+        }
+    }
+
+    public static void validateCompanyIndicator(String c_ind) {
+        if (c_ind.isEmpty() || c_ind == null) {
+            throw new IllegalArgumentException("Company indicator cannot be blank or null!");
+        }
     }
 
     private static boolean empty(String s) {
@@ -52,21 +89,21 @@ public class fullname implements MaskingAlgorithm<String> {
 
     @Override
     public String mask(@Nullable String input) throws MaskingException {
-        String output;
+        String output,input_formatted, input_trim;
         if (empty(input)) {
             return input;
         } else {
-            if (input.trim().startsWith("*")) {
-                output =  '*' + this.Cmp_algo_instance.mask(input);
-            }
-            else {
-                output =  this.Ind_algo_instance.mask(input);
-            }
-            return output;
+                input_trim = input.trim();
+                if (input_trim.startsWith(this.unescaped_indicator)) {
+                    input_formatted = input.split(this.Company_Indicator, 2)[1].substring(0,Math.min(input_trim.length()-1, this.Short_Length));
+                    output = this.unescaped_indicator + this.Cmp_algo_instance.mask(input_formatted.trim());
+                } else {
+                    input_formatted = input.substring(0,Math.min(input_trim.length()-1, this.Short_Length));
+                    output = this.Ind_algo_instance.mask(input_formatted.trim());
+                }
+                return output;
         }
     }
-
-
 
     /**
      * Get the recommended name of this Algorithm.

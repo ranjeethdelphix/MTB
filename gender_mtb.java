@@ -20,16 +20,29 @@ public class gender_mtb implements MaskingAlgorithm<String> {
     @JsonPropertyDescription("List of values to randomize from")
     public List<String> listValues;
 
+    @JsonProperty("retain_default")
+    @JsonPropertyDescription("Ignore spaces and nulls? True / False")
+    public boolean retain_default;
+
     public boolean getAllowFurtherInstances() {
         return true;
     }
+
+    private static boolean empty(String s) {
+        return s == null || s.trim().isEmpty();
+    }
+
     public void setup(ComponentService serviceProvider) {
         return;
     }
 
         @Override
     public String mask(@Nullable String input) {
-        // TODO: change the default implementation.
+        if (this.retain_default) {
+           if (empty(input)) {
+                return input;
+            }
+        }
         Random random = new Random();
         int randomIndex = random.nextInt(this.listValues.size());
         return this.listValues.get(randomIndex);
