@@ -90,57 +90,32 @@ public class date_custom implements MaskingAlgorithm<String> {
         } else {
 			try {
 				LocalDate ld = null, ld2 = null;
-
+				interim_input = String.format(date_format_decimal, Integer.parseInt(input.trim()));
 				if (this.century) {
-					ld = LocalDate.parse(input.substring(1), this.internal_dateformat);
+					ld = LocalDate.parse(interim_input.substring(1), this.internal_dateformat);
 				}
 				else {
-					ld = LocalDate.parse(input, this.internal_dateformat);
+					ld = LocalDate.parse(interim_input, this.internal_dateformat);
 				}
+
+				ld2 = ld.minusDays(minDays);
 				
-				monthValue = ld.getMonthValue();
-				
-				if (monthValue == 1) {
+				if (ld2.getYear() != ld.getYear()) {
 					ld2 = ld.plusDays(minDays);
-				} else {
-					ld2 = ld.minusDays(minDays);
 				}
 				
 				if (this.century) {
-					output = input.charAt(0) + ld2.format(this.internal_dateformat);
+					output = interim_input.charAt(0) + ld2.format(this.internal_dateformat);
 				} else {
 					output = ld2.format(this.internal_dateformat);
 				}
 				
 			} catch (DateTimeParseException e1) {
-				LocalDateTime ldt = null, ldt2 = null;
-
-				if (this.century) {
-					ldt = LocalDateTime.parse(input.substring(1), this.internal_dateformat);
-				}
-				else {
-					ldt = LocalDateTime.parse(input, this.internal_dateformat);
-				}
-				
-				monthValue = ldt.getMonthValue();
-				
-				if (monthValue == 1) {
-					ldt2 = ldt.plusDays(minDays);
-				} else {
-					ldt2 = ldt.minusDays(minDays);
-				}
-				
-				if (this.century) {
-					output = input.charAt(0) + ldt2.format(this.internal_dateformat);
-				} else {
-					output = ldt2.format(this.internal_dateformat);
-				}
+				return input;
 			}
 			return output;
 		}
     }
-
-
 
     /**
      * Get the recommended name of this Algorithm.
